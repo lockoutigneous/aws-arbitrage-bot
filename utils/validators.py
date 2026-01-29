@@ -36,7 +36,7 @@ def validate_positive_number(value, name: str = "value") -> Tuple[bool, Optional
     Kiểm tra giá trị có phải là số dương không.
     
     Args:
-        value: Giá trị cần kiểm tra
+        value (Union[int, float, str]): Giá trị cần kiểm tra
         name (str): Tên của giá trị (dùng cho thông báo lỗi)
         
     Returns:
@@ -56,7 +56,7 @@ def validate_positive_integer(value, name: str = "value") -> Tuple[bool, Optiona
     Kiểm tra giá trị có phải là số nguyên dương không.
     
     Args:
-        value: Giá trị cần kiểm tra
+        value (Union[int, str]): Giá trị cần kiểm tra
         name (str): Tên của giá trị (dùng cho thông báo lỗi)
         
     Returns:
@@ -105,6 +105,8 @@ def validate_exchanges_unique(exchanges: List[str]) -> Tuple[bool, Optional[str]
     Returns:
         tuple: (is_valid: bool, error_message: str or None)
     """
-    if len(exchanges) != len(set(exchanges)):
+    # Normalize to lowercase for case-insensitive comparison
+    normalized = [ex.lower() for ex in exchanges]
+    if len(normalized) != len(set(normalized)):
         return False, "Các sàn giao dịch phải khác nhau"
     return True, None

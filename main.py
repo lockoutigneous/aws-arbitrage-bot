@@ -35,7 +35,7 @@ from utils.validators import (
     validate_mode, validate_exchange, validate_positive_number,
     validate_positive_integer, validate_symbol, validate_exchanges_unique
 )
-from configs import PYTHON_COMMAND, ENABLE_TELEGRAM, BOT_MODES
+from configs import PYTHON_COMMAND, ENABLE_TELEGRAM, BOT_MODES, MIN_USDT_AMOUNT
 
 
 def setup_logging(level=logging.INFO):
@@ -154,8 +154,8 @@ def validate_bot_config(mode, renew_time, usdt_amount, exchanges, symbol=None):
     is_valid, error = validate_positive_number(usdt_amount, "Số lượng USDT")
     if not is_valid:
         errors.append(error)
-    elif usdt_amount < 10:
-        errors.append("Số lượng USDT phải ít nhất là 10 USDT")
+    elif usdt_amount < MIN_USDT_AMOUNT:
+        errors.append(f"Số lượng USDT phải ít nhất là {MIN_USDT_AMOUNT} USDT")
     
     # Validate exchanges
     for exchange in exchanges:
@@ -220,11 +220,11 @@ def get_user_input():
             elif key == "balance":
                 is_valid, error = validate_positive_number(user_input, "Số dư")
                 if is_valid:
-                    if float(user_input) >= 10:
+                    if float(user_input) >= MIN_USDT_AMOUNT:
                         inputs[key] = user_input
                         break
                     else:
-                        print(f"{Fore.RED}Số dư phải ít nhất là 10 USDT{Style.RESET_ALL}")
+                        print(f"{Fore.RED}Số dư phải ít nhất là {MIN_USDT_AMOUNT} USDT{Style.RESET_ALL}")
                 else:
                     print(f"{Fore.RED}{error}{Style.RESET_ALL}")
             
@@ -330,7 +330,6 @@ async def find_best_symbol(exchange_service, exchanges):
                 f.write(default_pair)
             
             return default_pair
-            
     except Exception as e:
         log_error(f"Lỗi khi tìm cặp giao dịch tốt nhất: {str(e)}")
         
@@ -459,11 +458,6 @@ async def main():
                 for error in errors:
                     log_error(error)
                 sys.exit(1)
-        
-        # Kiểm tra chế độ
-        if mode not in BOT_MODES:
-            log_error(f"Chế độ không hợp lệ: {mode}. Các chế độ hợp lệ: {', '.join(BOT_MODES)}")
-            sys.exit(1)
             
         # Chạy bot
         i = 0

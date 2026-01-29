@@ -61,7 +61,7 @@ def calculate_average(values: List[Union[int, float]]) -> float:
     return sum(values) / len(values)
 
 
-def append_to_file(file_path, content, add_newline=True):
+def append_to_file(file_path: str, content: str, add_newline: bool = True) -> bool:
     """
     Thêm nội dung vào cuối tệp tin.
     

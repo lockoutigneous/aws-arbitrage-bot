@@ -156,3 +156,12 @@ class TestValidateExchangesUnique:
         
         is_valid, error = validate_exchanges_unique(["binance", "kucoin", "binance"])
         assert is_valid is False
+    
+    def test_case_insensitive_duplicates(self):
+        """Test that exchanges with different cases are detected as duplicates."""
+        is_valid, error = validate_exchanges_unique(["Binance", "binance", "okx"])
+        assert is_valid is False
+        assert "khác nhau" in error
+        
+        is_valid, error = validate_exchanges_unique(["BINANCE", "Binance", "binance"])
+        assert is_valid is False
