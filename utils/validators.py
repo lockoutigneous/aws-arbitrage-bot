@@ -1,10 +1,11 @@
 """
 Các hàm xác thực và kiểm tra đầu vào.
 """
+from typing import List, Tuple, Optional
 from configs import BOT_MODES, SUPPORTED_EXCHANGES
 
 
-def validate_mode(mode):
+def validate_mode(mode: str) -> bool:
     """
     Kiểm tra chế độ bot có hợp lệ không.
     
@@ -17,7 +18,7 @@ def validate_mode(mode):
     return mode in BOT_MODES
 
 
-def validate_exchange(exchange_id):
+def validate_exchange(exchange_id: str) -> bool:
     """
     Kiểm tra sàn giao dịch có được hỗ trợ không.
     
@@ -30,7 +31,7 @@ def validate_exchange(exchange_id):
     return exchange_id.lower() in SUPPORTED_EXCHANGES
 
 
-def validate_positive_number(value, name="value"):
+def validate_positive_number(value, name: str = "value") -> Tuple[bool, Optional[str]]:
     """
     Kiểm tra giá trị có phải là số dương không.
     
@@ -50,7 +51,7 @@ def validate_positive_number(value, name="value"):
         return False, f"{name} phải là một số hợp lệ"
 
 
-def validate_positive_integer(value, name="value"):
+def validate_positive_integer(value, name: str = "value") -> Tuple[bool, Optional[str]]:
     """
     Kiểm tra giá trị có phải là số nguyên dương không.
     
@@ -70,7 +71,7 @@ def validate_positive_integer(value, name="value"):
         return False, f"{name} phải là một số nguyên hợp lệ"
 
 
-def validate_symbol(symbol):
+def validate_symbol(symbol: Optional[str]) -> Tuple[bool, Optional[str]]:
     """
     Kiểm tra ký hiệu cặp giao dịch có đúng định dạng không.
     
@@ -94,7 +95,7 @@ def validate_symbol(symbol):
     return True, None
 
 
-def validate_exchanges_unique(exchanges):
+def validate_exchanges_unique(exchanges: List[str]) -> Tuple[bool, Optional[str]]:
     """
     Kiểm tra các sàn giao dịch có khác nhau không.
     

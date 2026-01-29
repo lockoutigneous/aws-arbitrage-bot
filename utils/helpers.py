@@ -2,32 +2,60 @@
 Các hàm tiện ích dùng chung cho toàn bộ ứng dụng.
 """
 import time
+from typing import List, Optional, Union
 from datetime import datetime
 from colorama import Style
 
 
-def show_time():
-    """Trả về thời gian hiện tại định dạng HH:MM:SS."""
+def show_time() -> str:
+    """
+    Trả về thời gian hiện tại định dạng HH:MM:SS.
+    
+    Returns:
+        str: Thời gian hiện tại theo định dạng HH:MM:SS
+    """
     return time.strftime('%H:%M:%S', time.gmtime(time.time()))
 
 
-def format_message(message):
+def format_message(message: str) -> str:
     """
     Format thông báo để hiển thị đúng định dạng và
     loại bỏ các ký tự đặc biệt của colorama.
+    
+    Args:
+        message (str): Thông báo cần format
+        
+    Returns:
+        str: Thông báo đã được format
     """
     message = message.replace("[2m", "")
     message = message.replace("[0m", "")
     return message
 
 
-def format_log_message(message):
-    """Format thông báo log với thời gian."""
+def format_log_message(message: str) -> str:
+    """
+    Format thông báo log với thời gian.
+    
+    Args:
+        message (str): Thông báo cần format
+        
+    Returns:
+        str: Thông báo đã được format với timestamp
+    """
     return f"{Style.DIM}[{show_time()}]{Style.RESET_ALL} {message}"
 
 
-def calculate_average(values):
-    """Tính giá trị trung bình của một danh sách số."""
+def calculate_average(values: List[Union[int, float]]) -> float:
+    """
+    Tính giá trị trung bình của một danh sách số.
+    
+    Args:
+        values (List[Union[int, float]]): Danh sách các giá trị số
+        
+    Returns:
+        float: Giá trị trung bình, hoặc 0 nếu danh sách rỗng
+    """
     if not values:
         return 0
     return sum(values) / len(values)
@@ -64,7 +92,7 @@ def append_to_file(file_path, content, add_newline=True):
         return False
 
 
-def read_file_content(file_path, default=""):
+def read_file_content(file_path: str, default: str = "") -> str:
     """
     Đọc nội dung của tệp tin.
     
@@ -92,7 +120,7 @@ def read_file_content(file_path, default=""):
         return default
 
 
-def update_balance_file(file_path, profit_pct, original_balance):
+def update_balance_file(file_path: str, profit_pct: float, original_balance: float) -> float:
     """
     Cập nhật tệp tin số dư với lợi nhuận mới.
     
@@ -120,8 +148,16 @@ def update_balance_file(file_path, profit_pct, original_balance):
         return original_balance
 
 
-def extract_base_asset(symbol):
-    """Trích xuất tên tài sản cơ sở từ một cặp giao dịch."""
+def extract_base_asset(symbol: str) -> str:
+    """
+    Trích xuất tên tài sản cơ sở từ một cặp giao dịch.
+    
+    Args:
+        symbol (str): Ký hiệu cặp giao dịch (ví dụ: BTC/USDT hoặc BTC:USDT)
+        
+    Returns:
+        str: Tên tài sản cơ sở (ví dụ: BTC)
+    """
     if '/' in symbol:
         return symbol.split('/')[0]
     elif ':' in symbol:
@@ -129,7 +165,7 @@ def extract_base_asset(symbol):
     return symbol
 
 
-def get_precision_min(orderbook, exchange_id):
+def get_precision_min(orderbook: dict, exchange_id: str) -> float:
     """
     Xác định độ chính xác tối thiểu cho giá dựa trên sách lệnh.
     
@@ -181,7 +217,7 @@ def get_precision_min(orderbook, exchange_id):
         return 0.01
 
 
-def printandtelegram(message, notification_service=None):
+def printandtelegram(message: str, notification_service=None) -> None:
     """
     In thông báo ra màn hình và gửi qua Telegram nếu có thể.
     
