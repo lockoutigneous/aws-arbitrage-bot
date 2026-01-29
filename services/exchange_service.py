@@ -10,6 +10,7 @@ from dotenv import load_dotenv
 from utils.logger import log_info, log_error, log_debug
 from utils.exceptions import ExchangeError, InsufficientBalanceError, FuturesError
 from utils.helpers import calculate_average, extract_base_asset
+from configs import MIN_USDT_FOR_CONVERSION, EMERGENCY_CONVERSION_KEEP_PERCENTAGE
 
 # Tải biến môi trường
 load_dotenv()
@@ -434,14 +435,14 @@ class ExchangeService:
         except Exception as e:
             raise ExchangeError(exchange_id, f"Không thể theo dõi sách lệnh cho {symbol}: {str(e)}")
     
-    def emergency_convert(self, exchange_id, symbol, keep_percentage=0.01):
+    def emergency_convert(self, exchange_id, symbol, keep_percentage=None):
         """
         Chuyển đổi khẩn cấp một tài sản sang USDT.
         
         Args:
             exchange_id (str): ID của sàn giao dịch
             symbol (str): Ký hiệu của cặp giao dịch
-            keep_percentage (float): Phần trăm tài sản giữ lại (0.01 = 1%)
+            keep_percentage (float, optional): Phần trăm tài sản giữ lại (mặc định từ config)
         
         Returns:
             dict: Thông tin lệnh bán
@@ -449,6 +450,9 @@ class ExchangeService:
         Raises:
             ExchangeError: Nếu có lỗi khi chuyển đổi
         """
+        if keep_percentage is None:
+            keep_percentage = EMERGENCY_CONVERSION_KEEP_PERCENTAGE
+            
         try:
             # Hủy tất cả các lệnh đang mở
             self.cancel_all_orders(exchange_id, symbol)
@@ -460,7 +464,7 @@ class ExchangeService:
             
             # Kiểm tra số dư tối thiểu
             ticker = self.get_ticker(exchange_id, symbol)
-            min_amount_in_base = 10 / ticker['last']  # Số lượng tối thiểu tương đương 10 USDT
+            min_amount_in_base = MIN_USDT_FOR_CONVERSION / ticker['last']  # Số lượng tối thiểu tương đương MIN_USDT_FOR_CONVERSION USDT
             
             if balance_to_sell > min_amount_in_base:
                 return self.create_market_sell_order(exchange_id, symbol, round(balance_to_sell, 4))
