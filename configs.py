@@ -20,6 +20,23 @@ PROFIT_CRITERIA_USD = 0  # Lợi nhuận USD tối thiểu
 BETTER_FILL_LESS_PROFITS = True  # Điều chỉnh fill để giảm lợi nhuận
 FIRST_ORDERS_FILL_TIMEOUT = 3600  # Thời gian chờ tối đa để fill đơn hàng đầu tiên (giây)
 
+# Giới hạn giao dịch
+MIN_USDT_AMOUNT = 10  # Số lượng USDT tối thiểu để giao dịch
+MIN_USDT_FOR_CONVERSION = 10  # Số lượng USDT tối thiểu để chuyển đổi
+
+# Thông số retry và timeout
+DEFAULT_RETRY_ATTEMPTS = 3  # Số lần thử lại mặc định cho API calls
+DEFAULT_RETRY_DELAY = 1  # Thời gian chờ giữa các lần thử (giây)
+ORDERBOOK_WATCH_DELAY = 0.1  # Thời gian chờ giữa các lần kiểm tra orderbook (giây)
+NETWORK_ERROR_DELAY = 1  # Thời gian chờ khi gặp lỗi mạng (giây)
+
+# Phần trăm giữ lại khi chuyển đổi khẩn cấp
+EMERGENCY_CONVERSION_KEEP_PERCENTAGE = 0.01  # 1% tài sản giữ lại
+
+# Hệ số an toàn cho giao dịch
+TRANSACTION_SAFETY_FACTOR = 0.99  # Giảm 1% để đảm bảo đủ số dư
+BALANCE_SAFETY_MARGIN = 1.001  # Thêm 0.1% cho phí và biến động
+
 # Danh sách các sàn giao dịch hỗ trợ
 SUPPORTED_EXCHANGES = ['kucoin', 'binance', 'bybit', 'okx', 'kucoinfutures']
 

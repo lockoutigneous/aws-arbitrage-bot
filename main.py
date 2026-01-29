@@ -31,6 +31,10 @@ from bots.fake_money_bot import FakeMoneyBot
 # Import các module tiện ích
 from utils.logger import log_info, log_error, log_warning, logger
 from utils.helpers import show_time
+from utils.validators import (
+    validate_mode, validate_exchange, validate_positive_number,
+    validate_positive_integer, validate_symbol, validate_exchanges_unique
+)
 from configs import PYTHON_COMMAND, ENABLE_TELEGRAM, BOT_MODES
 
 
@@ -104,7 +108,71 @@ def parse_arguments():
     parser.add_argument('--no-banner', action='store_true', help='Không hiển thị banner')
     parser.add_argument('--dry-run', action='store_true', help='Chạy mà không thực hiện giao dịch thực tế')
     
-    return parser.parse_args()
+    args = parser.parse_args()
+    
+    # Validate arguments
+    errors = validate_bot_config(
+        args.mode,
+        args.renew_time,
+        args.usdt_amount,
+        [args.exchange1, args.exchange2, args.exchange3],
+        args.symbol
+    )
+    
+    if errors:
+        parser.error('\n'.join(errors))
+    
+    return args
+
+
+def validate_bot_config(mode, renew_time, usdt_amount, exchanges, symbol=None):
+    """
+    Xác thực cấu hình bot.
+    
+    Args:
+        mode (str): Chế độ bot
+        renew_time (int): Thời gian làm mới (phút)
+        usdt_amount (float): Số lượng USDT để giao dịch
+        exchanges (list): Danh sách các sàn giao dịch
+        symbol (str, optional): Ký hiệu cặp giao dịch
+        
+    Returns:
+        list: Danh sách các lỗi (rỗng nếu không có lỗi)
+    """
+    errors = []
+    
+    # Validate mode
+    if not validate_mode(mode):
+        errors.append(f"Chế độ không hợp lệ: {mode}. Các chế độ hợp lệ: {', '.join(BOT_MODES)}")
+    
+    # Validate renew_time
+    is_valid, error = validate_positive_integer(renew_time, "Thời gian làm mới")
+    if not is_valid:
+        errors.append(error)
+    
+    # Validate usdt_amount
+    is_valid, error = validate_positive_number(usdt_amount, "Số lượng USDT")
+    if not is_valid:
+        errors.append(error)
+    elif usdt_amount < 10:
+        errors.append("Số lượng USDT phải ít nhất là 10 USDT")
+    
+    # Validate exchanges
+    for exchange in exchanges:
+        if not validate_exchange(exchange):
+            errors.append(f"Sàn giao dịch không được hỗ trợ: {exchange}")
+    
+    is_valid, error = validate_exchanges_unique(exchanges)
+    if not is_valid:
+        errors.append(error)
+    
+    # Validate symbol
+    if symbol:
+        is_valid, error = validate_symbol(symbol)
+        if not is_valid:
+            errors.append(error)
+    
+    return errors
 
 
 def get_user_input():
@@ -116,23 +184,74 @@ def get_user_input():
     """
     inputs = {}
     
-    # Danh sách các thông tin cần nhập
-    input_list = [
-        "mode (fake-money, classic, delta-neutral)",
-        "renew time (in minutes)",
-        "balance to use (USDT)",
-        "exchange 1",
-        "exchange 2",
-        "exchange 3",
-        "crypto pair (để trống để tìm tự động)"
+    # Danh sách các thông tin cần nhập với key tương ứng
+    input_prompts = [
+        ("mode", "mode (fake-money, classic, delta-neutral)"),
+        ("renew_time", "renew time (in minutes)"),
+        ("balance", "balance to use (USDT)"),
+        ("exchange1", "exchange 1"),
+        ("exchange2", "exchange 2"),
+        ("exchange3", "exchange 3"),
+        ("crypto", "crypto pair (để trống để tìm tự động)")
     ]
     
     print(f"{Fore.YELLOW}Nhập thông tin cấu hình:{Style.RESET_ALL}")
     # Lấy thông tin từ người dùng
-    for prompt in input_list:
-        user_input = input(f"{Fore.CYAN}{prompt}{Style.RESET_ALL} >>> ")
-        key = prompt.split(" ")[0]
-        inputs[key] = user_input
+    for key, prompt in input_prompts:
+        while True:
+            user_input = input(f"{Fore.CYAN}{prompt}{Style.RESET_ALL} >>> ").strip()
+            
+            # Validate input based on key
+            if key == "mode":
+                if validate_mode(user_input):
+                    inputs[key] = user_input
+                    break
+                else:
+                    print(f"{Fore.RED}Chế độ không hợp lệ. Vui lòng chọn: {', '.join(BOT_MODES)}{Style.RESET_ALL}")
+            
+            elif key == "renew_time":
+                is_valid, error = validate_positive_integer(user_input, "Thời gian làm mới")
+                if is_valid:
+                    inputs[key] = user_input
+                    break
+                else:
+                    print(f"{Fore.RED}{error}{Style.RESET_ALL}")
+            
+            elif key == "balance":
+                is_valid, error = validate_positive_number(user_input, "Số dư")
+                if is_valid:
+                    if float(user_input) >= 10:
+                        inputs[key] = user_input
+                        break
+                    else:
+                        print(f"{Fore.RED}Số dư phải ít nhất là 10 USDT{Style.RESET_ALL}")
+                else:
+                    print(f"{Fore.RED}{error}{Style.RESET_ALL}")
+            
+            elif key in ["exchange1", "exchange2", "exchange3"]:
+                if validate_exchange(user_input):
+                    inputs[key] = user_input
+                    break
+                else:
+                    print(f"{Fore.RED}Sàn không được hỗ trợ. Các sàn hợp lệ: binance, kucoin, okx, bybit{Style.RESET_ALL}")
+            
+            elif key == "crypto":
+                if not user_input:  # Cho phép để trống
+                    inputs[key] = user_input
+                    break
+                is_valid, error = validate_symbol(user_input)
+                if is_valid:
+                    inputs[key] = user_input
+                    break
+                else:
+                    print(f"{Fore.RED}{error}{Style.RESET_ALL}")
+    
+    # Check if exchanges are unique
+    exchanges = [inputs["exchange1"], inputs["exchange2"], inputs["exchange3"]]
+    is_valid, error = validate_exchanges_unique(exchanges)
+    if not is_valid:
+        print(f"{Fore.RED}{error}. Vui lòng khởi động lại và nhập lại.{Style.RESET_ALL}")
+        sys.exit(1)
     
     print()  # Dòng trống cho đẹp
     return inputs
@@ -320,7 +439,6 @@ async def main():
             exchanges = [args.exchange1, args.exchange2, args.exchange3]
             symbol = args.symbol
             dry_run = args.dry_run
-            
         # Nếu không có tham số dòng lệnh, lấy thông tin từ người dùng
         else:
             # Hiển thị banner
@@ -329,11 +447,18 @@ async def main():
             inputs = get_user_input()
             
             mode = inputs["mode"]
-            renew_time = int(inputs["renew"])
+            renew_time = int(inputs["renew_time"])
             usdt_amount = float(inputs["balance"])
-            exchanges = [inputs["exchange"], inputs["exchange"], inputs["exchange"]]
+            exchanges = [inputs["exchange1"], inputs["exchange2"], inputs["exchange3"]]
             symbol = inputs["crypto"] if inputs["crypto"] else None
             dry_run = False  # Mặc định không phải dry run khi nhập thủ công
+            
+            # Validate configuration
+            errors = validate_bot_config(mode, renew_time, usdt_amount, exchanges, symbol)
+            if errors:
+                for error in errors:
+                    log_error(error)
+                sys.exit(1)
         
         # Kiểm tra chế độ
         if mode not in BOT_MODES:

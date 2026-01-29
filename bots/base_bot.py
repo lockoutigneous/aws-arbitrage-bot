@@ -12,7 +12,11 @@ from colorama import Fore, Style
 from utils.logger import log_info, log_error, log_warning, log_profit, log_opportunity
 from utils.exceptions import ArbitrageError, ExchangeError, InsufficientBalanceError, OrderError
 from utils.helpers import show_time, extract_base_asset
-from configs import PROFIT_CRITERIA_PCT, PROFIT_CRITERIA_USD, ENABLE_CTRL_C_HANDLING
+from configs import (
+    PROFIT_CRITERIA_PCT, PROFIT_CRITERIA_USD, ENABLE_CTRL_C_HANDLING,
+    ORDERBOOK_WATCH_DELAY, NETWORK_ERROR_DELAY, TRANSACTION_SAFETY_FACTOR,
+    BALANCE_SAFETY_MARGIN
+)
 
 
 class BaseBot:
@@ -199,14 +203,14 @@ class BaseBot:
                     
                 except ccxt.pro.NetworkError as network_error:
                     log_warning(f"Lỗi kết nối với {exchange_id}: {str(network_error)}")
-                    await asyncio.sleep(1)  # Đợi một chút trước khi thử lại
+                    await asyncio.sleep(NETWORK_ERROR_DELAY)  # Đợi một chút trước khi thử lại
                     
                 except Exception as loop_error:
                     log_error(f"Lỗi trong vòng lặp {exchange_id}: {str(loop_error)}")
-                    await asyncio.sleep(1)  # Đợi một chút trước khi thử lại
+                    await asyncio.sleep(NETWORK_ERROR_DELAY)  # Đợi một chút trước khi thử lại
                 
                 # Đợi một chút để giảm tải cho CPU
-                await asyncio.sleep(0.1)
+                await asyncio.sleep(ORDERBOOK_WATCH_DELAY)
             
             # Đóng kết nối với sàn giao dịch
             log_info(f"Kết thúc theo dõi sách lệnh trên sàn {exchange_id}")
@@ -345,10 +349,10 @@ class BaseBot:
             return False
         
         # Kiểm tra đủ số dư để thực hiện giao dịch
-        if self.usd[min_ask_ex] < self.crypto_per_transaction * self.min_ask_price * 1.001:
+        if self.usd[min_ask_ex] < self.crypto_per_transaction * self.min_ask_price * BALANCE_SAFETY_MARGIN:
             return False
             
-        if self.crypto[max_bid_ex] < self.crypto_per_transaction * 1.001:
+        if self.crypto[max_bid_ex] < self.crypto_per_transaction * BALANCE_SAFETY_MARGIN:
             return False
         
         # Nếu qua tất cả các điều kiện, có thể thực hiện giao dịch
@@ -441,7 +445,7 @@ class BaseBot:
         total_crypto = sum(self.crypto.values())
         
         # Cập nhật số lượng crypto mỗi giao dịch (lấy trung bình)
-        self.crypto_per_transaction = total_crypto / len(self.exchanges) * 0.99  # Giảm 1% để đảm bảo đủ số dư
+        self.crypto_per_transaction = total_crypto / len(self.exchanges) * TRANSACTION_SAFETY_FACTOR  # Giảm 1% để đảm bảo đủ số dư
     
     def _display_trade_report(self, min_ask_ex, max_bid_ex, profit_pct, profit_usd, fee_usd, fee_crypto):
         """
